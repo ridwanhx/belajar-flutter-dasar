@@ -1,101 +1,224 @@
 // # Komponen Interaktif (Visible)
 
-// ElevatedButton, TextButton, dan IconButton
-// Secara fungsi, komponen-komponen ini akan memicu aksi saat pengguna berinteraksi (menekan). Flutter telah beralih dari RaisedButton, FlatButton ke ElevatedButton, TextButton, dll.
-// Menawarkan sistem styling yang lebih konsisten dan fleksibel.
-// Beberapa atribut kunci terkait :
-// 1. onPressed: Callback VoidCallback yang dieksekusi saat tombol ditekan. (jika bernilai null, secara otomatis tombol akan masuk ke disabled state / tampilan non-aktif dan tidak bisa ditekan)
-// 2. child (untuk ElecatedButton, TextButton): Widget yang ditampilkan di dalam tombol, biasanya Text.
-// 3. icon (untuk IconButton dan varian .icon): Widget Icon yang ditampilkan.
-// 4. style: Menerima objek ButtonStyle. Cara modern untuk mengkostumisasi tampilan tombol. Gunakan metode statis seperti ElevatedButton.styleFrom() untuk kemudahan, yang memungkinkan kita untuk misal mengatur backgroundColor, foregroundColor (warna, teks/icon), shape, padding, dan lainnya.
+// Textfield, Checkbox, Radio, Switch, Slider
+// Merupakan komponen komponen yang berfungsi untuk mengumpulkan input atau pilihan dari pengguna.
+// Widget-widget ini biasanya digunakan di dalam StatefulWidget karena nilainya berubah berdasarkan interaksi pengguna.
+
+// Atribut Kunci
+// -- TextField:
+// controller -> Menerima TextEditingController untuk mendapatkan dan memanipulasi teks. Penting: Objek TextEditingController harus dibuat di initState() dan di dispose() untuk mencegah kebocoran memori (memory leak)
+// decoration -> Menerima inputDecoration untuk styling, termasuk labelText, hintText, border (OutlineInputBorder), prefixIcon, suffixIcon.
+// keyboardType -> Menerima TextInpurType (misalnya, .emailAddress, .number, .phone) untuk menampilkan keyboar yang sesuai pada perangkat mobil, meningkatkan UX
+// obscureText -> bool yang digunakan untuk menyembunyikan input, seperti pada field password.
+
+// -- Checkbox, Radio, Switch:
+// value -> Nilai saat ini dari kontrol (misalnya, bool untuk Checkbox dan Switch, atau nilai T untuk Radio)
+// onChanged -> Callback yang dipanggil saat pengguna mengubah nilai. Di sinilah kita biasanay memanggil setState() untuk memperbarui value dan membangun ulang UI
+// groupValue (untuk Radio<T>) -> Nilai yang saat ini dipilih dalam grup radio. Radio akan dianggap terpilih jika value-nya sama dengan groupValue
+
+// -- Slider:
+// value -> Nilai double saat ini dari slider
+// min, max -> Batas minimum dan maksimum dari rentang nilai.
+// onChanged -> Callback yang dipanggil saat pengguna menggeser slider, memberikan nilai baru.
 
 import 'package:flutter/material.dart';
 
-void main() => runApp(const MyApp());
+// method main
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // Root widget
-      home: Scaffold(
-        appBar: AppBar(title: Text('My Title')),
-        body: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // Membuat button menggunakan ElevatedButton
-              // secara default menerima dua parameter: onPressed, dan child
-              ElevatedButton(
-                // aksi yang akan dilakukan ketika tombol di tekan / on press
-                onPressed: () {
-                  print('ElevatedButton ditekan.');
-                },
-                style: ElevatedButton.styleFrom(
-                  // menambahkan warna background untuk button
-                  backgroundColor: Colors.red,
-                  // menambahkan warna teks button
-                  foregroundColor: Colors.white,
-                  // menambahkan padding
-                  // vertical, kalau di css ini sama seperti padding-y
-                  // horizontal, kalau di css ini sama seperti padding-x
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                  // mengatur radius
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadiusGeometry.circular(8),
+      title: 'Demo Input',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: InputDemo(),
+    );
+  }
+}
+
+// Implementasi
+// inisiasi kelas yang extends ke kelas StatefulWidget
+class InputDemo extends StatefulWidget {
+  @override
+  _InputDemoState createState() => _InputDemoState();
+}
+
+// inisiasi state dari StatefulWidget untuk menangani perubahan nilai input
+class _InputDemoState extends State<InputDemo> {
+  // controller untuk menangani input teks dari TextField nama
+  final TextEditingController _nameController = TextEditingController();
+
+  // inisiasi controller untuk input teks dari TextField password
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isPasswordVisible = false; // status visibilitas password
+
+  // inisiasi variabel untuk menyimpan status checkbox (true/false)
+  bool _isChecked = false;
+
+  // variabel untuk menyimpan pilihan Radio saat ini
+  String _selectedGender = 'P';
+
+  // variabel untuk menyimpan status Switch (true/false)
+  bool _isSwitched = false;
+
+  // variabel untuk menyimpan nilai Slider (double)
+  double _sliderValue = 50;
+
+  // inisiasi map untuk menyimpan status masing-masing hobi
+  Map<String, bool> _hobbies = {
+    'Coding': false,
+    'Streaming': false,
+    'Reading': false,
+    'Traveling': false,
+  };
+
+  // dispose controller untuk mencegah memory leak
+  @override
+  void dispose() {
+    _nameController.dispose();
+    // dispose controller (optimalisasi)
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Demo Input Interaktif')),
+      // penambahan padding
+      body: Padding(
+        // beri jarak untuk semua sisi
+        padding: const EdgeInsets.all(16),
+        // inisiasi child / konten agar ditampilkan secara vertikal
+        child: Column(
+          // mengatur posisi children di sumbu silang (kebalikan dari sumbu utama / mainAxisAlignment)
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // widget TextField untuk input teks
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: 'Nama',
+                hintText: 'Masukkan nama Anda',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person),
+              ),
+              keyboardType: TextInputType.name,
+            ),
+            SizedBox(height: 20),
+
+            TextField(
+              controller: _passwordController,
+              // khusus untuk password, tambahkan obscure
+              obscureText: !_isPasswordVisible,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                hintText: 'Masukkan password',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                prefixIcon: Icon(Icons.lock),
+                suffixIcon: IconButton(
+                  onPressed: () => setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  }),
+                  icon: Icon(
+                    _isPasswordVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                   ),
                 ),
-                // Konten berupa text bertuliskan Elevated
-                child: Text('Elevated'),
               ),
+              keyboardType: TextInputType.visiblePassword,
+            ),
 
-              // Membuat button menggunakan TextButton
-              TextButton(
-                onPressed: () {
-                  print('TextButton ditekan.');
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  foregroundColor: Colors.black,
-                  // EdgeInsets.all, kalau di css ini sama seperti menambahkan padding untuk semua sisi nya dengan jumlah yang sama
-                  padding: EdgeInsets.all(16),
-                  textStyle: TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'Times New Roman',
-                  ),
-                ),
-                child: Text('TextButton'),
+            SizedBox(height: 20),
+
+            // widget CheckboxListTile untuk pilihan setuju / tidak
+            CheckboxListTile(
+              title: Text(
+                'Saya setuju dengan syarat dan ketentuan yang berlaku.',
               ),
+              value: _isChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  _isChecked = value ?? false;
+                });
+              },
+            ),
+            SizedBox(height: 10),
 
-              // Membuat button menggunakan IconButton
-              // secara default menerima dua parameter, yaitu onPressed dan icon
-              // menambahkan juga tooltip
-              IconButton(
-                onPressed: () {
-                  print('IconButton ditekan.');
-                },
-                icon: Icon(Icons.thumb_up),
-                color: Colors.indigoAccent,
-                iconSize: 32,
-                tooltip: 'Sukai',
-              ),
+            Column(
+              children: _hobbies.keys.map((String key) {
+                return CheckboxListTile(
+                  title: Text(key),
+                  value: _hobbies[key],
+                  onChanged: (bool? value) {
+                    setState(() {
+                      _hobbies[key] = value ?? false;
+                    });
+                  },
+                );
+              }).toList(),
+            ),
 
-              // Membuat tombol disabled
-              // kombinasi icon dan text, direpresentasikan melalui icon dan label
-              ElevatedButton.icon(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            // widget RadioListTile untuk memilih jenis kelamin
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Jenis Kelamin'),
+                RadioListTile<String>(
+                  title: Text('Laki-laki'),
+                  value: 'L',
+                  groupValue: _selectedGender,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedGender = value!;
+                    });
+                  },
                 ),
-                icon: Icon(Icons.send),
-                label: Text('Send'),
+                RadioListTile<String>(
+                  title: Text('Perempuan'),
+                  value: 'P',
+                  groupValue: _selectedGender,
+                  onChanged: (value) => setState(() {
+                    _selectedGender = value!;
+                  }),
                 ),
-            ],
-          ),
+              ],
+            ),
+
+            // widget Switch untuk mengaktifkan atau menonaktifkan fitur
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Aktifkan notifikasi'),
+                Switch(
+                  value: _isSwitched,
+                  onChanged: (value) => setState(() {
+                    _isSwitched = value;
+                  }),
+                ),
+              ],
+            ),
+
+            // widget Slider untuk memilih nilai dalam rentang tertentu
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Volume: ${_sliderValue.toInt()}'),
+                Slider(
+                  value: _sliderValue,
+                  min: 0,
+                  max: 100,
+                  onChanged: (value) => setState(() {
+                    _sliderValue = value;
+                  }),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
