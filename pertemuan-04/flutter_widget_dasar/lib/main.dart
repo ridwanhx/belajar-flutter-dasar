@@ -1,25 +1,23 @@
 // # Komponen Interaktif (Visible)
 
-// Textfield, Checkbox, Radio, Switch, Slider
-// Merupakan komponen komponen yang berfungsi untuk mengumpulkan input atau pilihan dari pengguna.
-// Widget-widget ini biasanya digunakan di dalam StatefulWidget karena nilainya berubah berdasarkan interaksi pengguna.
+// Form dasar
+// Form, GlobalKey, TextFormField, pola validasi
+// Mengelompokkan, memvalidasi, dan menyimpan beberapa field input secara bersamaan.
+// Atribut Kunci & Pola:
+// 1. GlobalKey<FormState> -> Buat sebuah global key sebagai "pegangan" untuk Form yang kita buat.
+// cth: final _formkey = GlobalKey<FormState>();
 
-// Atribut Kunci
-// -- TextField:
-// controller -> Menerima TextEditingController untuk mendapatkan dan memanipulasi teks. Penting: Objek TextEditingController harus dibuat di initState() dan di dispose() untuk mencegah kebocoran memori (memory leak)
-// decoration -> Menerima inputDecoration untuk styling, termasuk labelText, hintText, border (OutlineInputBorder), prefixIcon, suffixIcon.
-// keyboardType -> Menerima TextInpurType (misalnya, .emailAddress, .number, .phone) untuk menampilkan keyboar yang sesuai pada perangkat mobil, meningkatkan UX
-// obscureText -> bool yang digunakan untuk menyembunyikan input, seperti pada field password.
+// 2. Form Widget -> Bungkus semua field input dengan widget Form dan berikan key yang telah dibuat.
+// cth: Form(key: _formKey, child: ...)
 
-// -- Checkbox, Radio, Switch:
-// value -> Nilai saat ini dari kontrol (misalnya, bool untuk Checkbox dan Switch, atau nilai T untuk Radio)
-// onChanged -> Callback yang dipanggil saat pengguna mengubah nilai. Di sinilah kita biasanay memanggil setState() untuk memperbarui value dan membangun ulang UI
-// groupValue (untuk Radio<T>) -> Nilai yang saat ini dipilih dalam grup radio. Radio akan dianggap terpilih jika value-nya sama dengan groupValue
+// 3. TextFormField -> Gunakan TextFormField alih-alih TextField. Ini adalah TextField yang sudah terintegrasi dengan Form.
 
-// -- Slider:
-// value -> Nilai double saat ini dari slider
-// min, max -> Batas minimum dan maksimum dari rentang nilai.
-// onChanged -> Callback yang dipanggil saat pengguna menggeser slider, memberikan nilai baru.
+// 4. validator -> Atribut terpenting pada TextFormField. Ini adalah fungsi yang menerima String (input pengguna) dan harus mengembalikan String (pesan error) jika input tidak valid, atau null jika valid.
+
+// 5. Validasi -> Panggil _formKey.currentState!.validate(), (biasanya di dalam onPressed sebuah tombol). Metode ini akan menjalankan fungsi validator untuk setiap TextFormField di dalam Form. Jika semua validator mengembalikan null, metode ini mengembalikan true. Jika ada yang mengembalikan pesan error, ia akan mengembalikan false dan menampilkan pesan error tersebut di UI.
+
+// 6. autoValidateMode -> Mengontrol kapan validasi otomatis terjadi. AutovalidateMode.disabled (sebagai default) berarti validasi hanya terjadi saat .validate() dipanggil.
+// AutovalidateMode.onUserInteraction adalah praktik UX yang baik, di mana validasi pada sebuah field akan aktif setelah pengguna berinteraksi dengannya untuk pertama kali.
 
 import 'package:flutter/material.dart';
 
@@ -27,96 +25,82 @@ import 'package:flutter/material.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Demo Input',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: InputDemo(),
+      title: 'Demo Form',
+      home: Scaffold(
+        appBar: AppBar(title: Text('Form validasi')),
+        // panggil kelas MyForm untuk di render ke layar
+        body: MyForm(),
+      ),
     );
   }
 }
 
-// Implementasi
-// inisiasi kelas yang extends ke kelas StatefulWidget
-class InputDemo extends StatefulWidget {
+// inisiasi kelas yang extends StatefulWidget
+class MyForm extends StatefulWidget {
   @override
-  _InputDemoState createState() => _InputDemoState();
+  _MyFormState createState() => _MyFormState();
 }
 
-// inisiasi state dari StatefulWidget untuk menangani perubahan nilai input
-class _InputDemoState extends State<InputDemo> {
-  // controller untuk menangani input teks dari TextField nama
-  final TextEditingController _nameController = TextEditingController();
+class _MyFormState extends State<MyForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
 
-  // inisiasi controller untuk input teks dari TextField password
-  final TextEditingController _passwordController = TextEditingController();
-  bool _isPasswordVisible = false; // status visibilitas password
+  final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
 
-  // inisiasi variabel untuk menyimpan status checkbox (true/false)
-  bool _isChecked = false;
-
-  // variabel untuk menyimpan pilihan Radio saat ini
-  String _selectedGender = 'P';
-
-  // variabel untuk menyimpan status Switch (true/false)
-  bool _isSwitched = false;
-
-  // variabel untuk menyimpan nilai Slider (double)
-  double _sliderValue = 50;
-
-  // inisiasi map untuk menyimpan status masing-masing hobi
-  Map<String, bool> _hobbies = {
-    'Coding': false,
-    'Streaming': false,
-    'Reading': false,
-    'Traveling': false,
-  };
-
-  // dispose controller untuk mencegah memory leak
   @override
   void dispose() {
-    _nameController.dispose();
-    // dispose controller (optimalisasi)
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Demo Input Interaktif')),
-      // penambahan padding
-      body: Padding(
-        // beri jarak untuk semua sisi
-        padding: const EdgeInsets.all(16),
-        // inisiasi child / konten agar ditampilkan secara vertikal
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: Column(
-          // mengatur posisi children di sumbu silang (kebalikan dari sumbu utama / mainAxisAlignment)
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // widget TextField untuk input teks
-            TextField(
-              controller: _nameController,
+          children: <Widget>[
+            TextFormField(
+              controller: _usernameController,
               decoration: InputDecoration(
-                labelText: 'Nama',
-                hintText: 'Masukkan nama Anda',
+                labelText: 'Username',
+                hintText: 'Masukkan username',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.person),
               ),
-              keyboardType: TextInputType.name,
+              keyboardType: TextInputType.text,
+              validator: (value) {
+                return (value == null || value.isEmpty)
+                    ? 'Field nama tidak boleh kosong'
+                    : null;
+              },
             ),
             SizedBox(height: 20),
 
-            TextField(
+            TextFormField(
               controller: _passwordController,
-              // khusus untuk password, tambahkan obscure
               obscureText: !_isPasswordVisible,
+              validator: (value) {
+                return (value == null || value.isEmpty)
+                    ? 'Field password tidak boleh kosong.'
+                    : null;
+              },
+              keyboardType: TextInputType.text,
               decoration: InputDecoration(
                 labelText: 'Password',
                 hintText: 'Masukkan password',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(50),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 prefixIcon: Icon(Icons.lock),
                 suffixIcon: IconButton(
@@ -130,93 +114,26 @@ class _InputDemoState extends State<InputDemo> {
                   ),
                 ),
               ),
-              keyboardType: TextInputType.visiblePassword,
             ),
-
             SizedBox(height: 20),
 
-            // widget CheckboxListTile untuk pilihan setuju / tidak
-            CheckboxListTile(
-              title: Text(
-                'Saya setuju dengan syarat dan ketentuan yang berlaku.',
-              ),
-              value: _isChecked,
-              onChanged: (bool? value) {
-                setState(() {
-                  _isChecked = value ?? false;
-                });
+            ElevatedButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Form valid!')));
+                }
               },
-            ),
-            SizedBox(height: 10),
-
-            Column(
-              children: _hobbies.keys.map((String key) {
-                return CheckboxListTile(
-                  title: Text(key),
-                  value: _hobbies[key],
-                  onChanged: (bool? value) {
-                    setState(() {
-                      _hobbies[key] = value ?? false;
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-
-            // widget RadioListTile untuk memilih jenis kelamin
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Jenis Kelamin'),
-                RadioListTile<String>(
-                  title: Text('Laki-laki'),
-                  value: 'L',
-                  groupValue: _selectedGender,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedGender = value!;
-                    });
-                  },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadiusGeometry.circular(8),
                 ),
-                RadioListTile<String>(
-                  title: Text('Perempuan'),
-                  value: 'P',
-                  groupValue: _selectedGender,
-                  onChanged: (value) => setState(() {
-                    _selectedGender = value!;
-                  }),
-                ),
-              ],
-            ),
-
-            // widget Switch untuk mengaktifkan atau menonaktifkan fitur
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Aktifkan notifikasi'),
-                Switch(
-                  value: _isSwitched,
-                  onChanged: (value) => setState(() {
-                    _isSwitched = value;
-                  }),
-                ),
-              ],
-            ),
-
-            // widget Slider untuk memilih nilai dalam rentang tertentu
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Volume: ${_sliderValue.toInt()}'),
-                Slider(
-                  value: _sliderValue,
-                  min: 0,
-                  max: 100,
-                  onChanged: (value) => setState(() {
-                    _sliderValue = value;
-                  }),
-                ),
-              ],
+              ),
+              child: Text('Submit'),
             ),
           ],
         ),
