@@ -1,0 +1,18 @@
+import 'package:flutter/material.dart';
+
+void main() => runApp(
+  const MaterialApp(
+    home: Scaffold(
+      body: Center(
+        child: Text(
+          'Halo semua',
+          style: TextStyle(
+            color: Colors.indigo,
+            fontSize: 22,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ),
+    ),
+  ),
+);
