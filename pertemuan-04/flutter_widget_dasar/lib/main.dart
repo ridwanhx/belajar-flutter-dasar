@@ -1,82 +1,119 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(
-  MaterialApp(
-    home: Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.indigo,
-        title: Text(
-          'Latihan Teks Multi-Baris',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w400,
-            color: Colors.white,
-          ),
-        ),
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Demo Form',
+      home: Scaffold(
+        appBar: AppBar(title: Text('Form validasi')),
+        body: MyForm(),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16),
+    );
+  }
+}
+
+class MyForm extends StatefulWidget {
+  @override
+  _MyFormState createState() => _MyFormState();
+}
+
+class _MyFormState extends State<MyForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+
+  final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Nama saya: Muhammad Ridwan',
-              style: TextStyle(
-                fontStyle: FontStyle.italic,
-                color: Colors.blue,
-                fontSize: 13,
+          children: <Widget>[
+            TextFormField(
+              controller: _usernameController,
+              decoration: InputDecoration(
+                labelText: 'Username',
+                hintText: 'Masukkan username',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person),
+              ),
+              keyboardType: TextInputType.text,
+              validator: (value) {
+                return (value == null || value.isEmpty)
+                    ? 'Field nama tidak boleh kosong'
+                    : null;
+              },
+            ),
+            SizedBox(height: 20),
+
+            TextFormField(
+              controller: _passwordController,
+              obscureText: !_isPasswordVisible,
+              validator: (value) {
+                return (value == null || value.isEmpty)
+                    ? 'Field password tidak boleh kosong.'
+                    : null;
+              },
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                hintText: 'Masukkan password',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                prefixIcon: Icon(Icons.lock),
+                suffixIcon: IconButton(
+                  onPressed: () => setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  }),
+                  icon: Icon(
+                    _isPasswordVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                ),
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 20),
 
-            Text(
-              'Alamat : Kabupaten Gotham',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-            ),
-            SizedBox(height: 12),
-
-            Text(
-              'Hobi saya adalah:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            SizedBox(height: 4),
-
-            Padding(
-              padding: EdgeInsets.only(left: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('\u2022 Ngoding'),
-                  Text('\u2022 Nonton Orang Ngoding'),
-                  Text('\u2022 Bercoding'),
-                ],
+            ElevatedButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Form valid!')));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadiusGeometry.circular(8),
+                ),
               ),
+              child: Text('Submit'),
             ),
-            SizedBox(height: 12),
-
-            Text(
-              'Bahasa pemograman yang dikuasai:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16
-              ),
-            ),
-            SizedBox(height: 4,),
-
-            Padding(
-              padding: EdgeInsets.only(left: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('1. PHP'),
-                  Text('2. Javascript'),
-                  Text('3. Go'),
-                ],
-              ),
-              )
           ],
         ),
       ),
-    ),
-  ),
-);
+    );
+  }
+}

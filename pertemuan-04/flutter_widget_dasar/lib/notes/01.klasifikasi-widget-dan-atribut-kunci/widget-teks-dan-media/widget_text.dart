@@ -13,9 +13,6 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(title: Text('My Title')),
         body: Center(
-          // Text
-          // Menampilkan sebaris atau beberapa baris teks dengan gaya tunggal
-          // pada kasus ini digunakan beberapa atribut kunci seperti textAlign, maxLines, overflow, dan style
           child: Text("Ini adalah contoh kalimat yang sangat panjang, dan mungkin panjangnya lebih dari satu baris dan jika lebih banyak lagi akhir kalimatnya akan diganti dengan ...", 
           textAlign: TextAlign.center,  // Mengatur perataan teks secara horizontal
           maxLines: 2,  // Menentukan jumlah maksimum baris yang diizinkan untuk teks
