@@ -56,14 +56,7 @@ class ProfilePage extends StatelessWidget {
       ),
       body: Container(
         color: Colors.grey[200],
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 420
-              ),
-            child: ProfileCard()
-            )
-        ),
+        child: Center(child: ProfileCard()),
       ),
     );
   }
@@ -82,37 +75,29 @@ class ProfileCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, .25),
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          ),
+            color: Color.fromRGBO(0, 0, 0, .25), 
+            blurRadius: 8, 
+            offset: Offset(0, 3)
+            )
         ],
       ),
 
       // child: const Placeholder(fallbackHeight: 120,), // kartu putih dengan bayangan
+
       child: Column(
         // menyesuaikan tinggi kartu agar mengikuti konten, bukan memanjang
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Align(
-            alignment: Alignment.center,
-            child: const CircleAvatar(
-              radius: 36,
-              backgroundImage: NetworkImage('https://picsum.photos/200'),
-            ),
-          ),
-          SizedBox(height: 12),
-
           const Text(
             'Alfia April Riani',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.indigo,
+              color: Colors.indigo
             ),
           ),
-          SizedBox(height: 12),
+          SizedBox(height: 12,),
 
           const Text(
             'Mahasiswa D4 Teknik Informatika',
@@ -122,7 +107,7 @@ class ProfileCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 12),
+          SizedBox(height: 12,),
 
           Text(
             'Saya adalah mahasiswa yang antusias dalam pengembangan aplikasi mobile dan ingin memperdalam pemograman flutter untuk membuat produk digital yang bermanfaat bagi nusa, bangsa, dan negara.',
@@ -130,27 +115,26 @@ class ProfileCard extends StatelessWidget {
             style: TextStyle(
               color: Colors.black,
               fontSize: 14,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w400
             ),
           ),
-          SizedBox(height: 12),
+          SizedBox(height: 12,),
 
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton.icon(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Tombol hubungi ditekan')),
-            ),
+          ElevatedButton.icon(
+            onPressed: () => ScaffoldMessenger.of(context). showSnackBar(
+              const SnackBar(content: Text(
+                'Tombol hubungi ditekan'
+              )),
+              ), 
             icon: Icon(Icons.email_outlined),
             label: Text(
               'Hubungi Saya',
               style: TextStyle(
                 color: Colors.indigo,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w500
               ),
-            ),
-          ),
-          ),
+              )
+            )
         ],
       ),
     );
