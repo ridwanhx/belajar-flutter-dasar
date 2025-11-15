@@ -20,80 +20,157 @@ class MyApp extends StatelessWidget {
         useMaterial3: true, // opsional
       ),
       home: const Scaffold(
-        body: SafeArea(child: Center(child: DashboardHeader())),
+        body: SafeArea(child: Center(child: ProfileCard())),
       ),
     );
   }
 }
 
-class DashboardHeader extends StatelessWidget {
-  const DashboardHeader({super.key});
+class ProfileCard extends StatelessWidget {
+  const ProfileCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.indigo,
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // TODO (1) Judul putih tebal, mis. "Welcome back, User"
-                Text(
-                  'Welcome back, Muhamad Ridwan',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Montserrat',
-                  ),
-                ),
-
-                // TODO (2) Subjudul putih tipis, mis. "Total Orders: 152"
-                Text(
-                  'Total Orders: 152',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w300,
-                    fontFamily: 'Montserrat',
-                  ),
-                ),
-
-                Container(
-                  padding: EdgeInsets.fromLTRB(8, 4, 8, 4),
-                  margin: EdgeInsets.only(top: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.indigo[100],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '7 Pending Orders',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.indigo[700],
-                    ),
-                  ),
-                ),
-              ],
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(3, 3, 3, .25),
+              blurRadius: 10,
+              offset: Offset(0, 4),
             ),
-          ),
+          ],
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // TODO (1) Ikon profil besar
+            Align(
+              alignment: Alignment.center,
+              child: CircleAvatar(
+                radius: 48,
+                backgroundImage: NetworkImage(
+                  'https://avatars.githubusercontent.com/u/93636329?v=4',
+                ),
+              ),
+            ),
+            SizedBox(height: 12),
 
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Tombol notifikasi ditekan.')),
-              );
-            },
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            tooltip: 'Notifikasi',
-          ),
-        ],
+            // TODO (2) Nama (tebal) + deskripsi singkat (abu-abu)
+            Align(
+              alignment: Alignment.center,
+              child: Text(
+                'Muhamad Ridwan',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 22,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            SizedBox(height: 12),
+
+            Align(
+              alignment: Alignment.center,
+              child: Text(
+                textAlign: TextAlign.center,
+                '"Mana 19 Juta Lapangan Kerja yang kamu janjikan itu wok."',
+                style: TextStyle(
+                  color: Colors.grey.shade400,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // TODO (3) Row Statistik (Posts, Followers, Following)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        '31',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          color: Colors.black
+                        ),
+                      ),
+
+                      Text(
+                        'posts',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 18
+                        ),
+                      )
+                    ],
+                  ),
+                  ),
+
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        '112',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          color: Colors.black
+                        ),
+                      ),
+
+                      Text(
+                        'followers',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 18
+                        ),
+                      )
+                    ],
+                  ),
+                  ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        '178',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          color: Colors.black
+                        ),
+                      ),
+
+                      Text(
+                        'following',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 18
+                        ),
+                      )
+                    ],
+                  ),
+                  ),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }
