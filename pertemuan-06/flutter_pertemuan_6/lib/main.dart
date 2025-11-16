@@ -81,7 +81,7 @@ class ProfileCard extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 textAlign: TextAlign.center,
-                '"Mana 19 Juta Lapangan Kerja yang kamu janjikan itu wok."',
+                '"test."',
                 style: TextStyle(
                   color: Colors.grey.shade400,
                   fontSize: 16,
