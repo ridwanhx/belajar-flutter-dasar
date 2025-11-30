@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -328,19 +329,19 @@ class _RegisterPageState extends State<RegisterPage> {
                         labelText: 'Prodi',
                         border: OutlineInputBorder(),
                       ),
-                      value: _selectedProdi,
+                      initialValue: _selectedProdi,
                       items: const [
                         DropdownMenuItem(
-                          child: Text('Informatika'),
                           value: 'Informatika',
+                          child: Text('Informatika'),
                         ),
                         DropdownMenuItem(
-                          child: Text('Sistem Informasi'),
                           value: 'Sistem Informasi',
+                          child: Text('Sistem Informasi'),
                         ),
                         DropdownMenuItem(
-                          child: Text('Manajemen Bisnis'),
                           value: 'Manajemen Bisnis',
+                          child: Text('Manajemen Bisnis'),
                         ),
                       ],
                       onChanged: (value) {
@@ -661,6 +662,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _jadwalKuliahList = List.from(dummyJadwalKuliah);
   }
 
+  @override
   Widget build(BuildContext context) {
     final userName = authController.currentUser?.fullName ?? 'Mahasiswa';
 
