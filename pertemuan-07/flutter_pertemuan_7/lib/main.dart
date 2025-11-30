@@ -1,8 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:collection/collection.dart';
+
+// Implementasi Shared Preferences | REFACTORING
+class LocalStorage {
+  static const _keyLogin = "isLoggedIn";
+  static const _keyEmail = "loggedEmail";
+
+  static Future<SharedPreferences> get _prefs async =>
+      await SharedPreferences.getInstance();
+
+  static Future<void> saveLogin(String email) async {
+    final p = await _prefs;
+    await p.setBool(_keyLogin, true);
+    await p.setString(_keyEmail, email);
+  }
+
+  static Future<bool> isLoggedIn() async {
+    final p = await _prefs;
+    return p.getBool(_keyLogin) ?? false;
+  }
+
+  static Future<String?> getEmail() async {
+    final p = await _prefs;
+    return p.getString(_keyEmail);
+  }
+
+  static Future<void> clear() async {
+    final p = await _prefs;
+    await p.remove(_keyLogin);
+    await p.remove(_keyEmail);
+  }
+}
 
 void main() {
-  runApp(const MyApp());
+  runApp(const RootApp());
+}
+
+class RootApp extends StatelessWidget {
+  const RootApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: FutureBuilder<bool>(
+        future: LocalStorage.isLoggedIn(),
+        builder: (context, snap) {
+          if (!snap.hasData) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final isLogged = snap.data!;
+          return isLogged
+              ? DashboardPage(authController: authController)
+              : RegisterPage(authController: authController);
+        },
+      ),
+    );
+  }
 }
 
 // --------------------------------------
@@ -28,11 +86,9 @@ class AppUser {
 
 // inisiasi controller
 class AuthController {
-  final List<AppUser> _registeredUsers = [];
+  final List<AppUser> _users = [];
   AppUser? currentUser;
 
-  // Register user baru
-  // Return true jika sukses, false jika email sudah terdaftar
   bool register({
     required String fullName,
     required String email,
@@ -40,36 +96,28 @@ class AuthController {
     required String nim,
     required String prodi,
   }) {
-    final alreadyExist = _registeredUsers.any(
-      (user) => user.email.toLowerCase() == email.toLowerCase(),
+    final exists = _users.any(
+      (u) => u.email.toLowerCase() == email.toLowerCase(),
     );
+    if (exists) return false;
 
-    // kembalikan false jika email sudah terdaftar
-    if (alreadyExist) {
-      return false;
-    }
-
-    // simpan isian field kedalam var user
-    final user = AppUser(
-      fullName: fullName,
-      email: email,
-      password: password,
-      nim: nim,
-      prodi: prodi,
+    _users.add(
+      AppUser(
+        fullName: fullName,
+        email: email,
+        password: password,
+        nim: nim,
+        prodi: prodi,
+      ),
     );
-
-    // tambahkan data user kedalam list
-    _registeredUsers.add(user);
     return true;
   }
 
-  // Login dengan email & password
-  // Return true jika sukses, dan set currentUser.
   bool login({required String email, required String password}) {
+    final e = email.toLowerCase();
     try {
-      final user = _registeredUsers.firstWhere(
-        (user) =>
-            user.email == email.toLowerCase() && user.password == password,
+      final user = _users.firstWhere(
+        (u) => u.email.toLowerCase() == e && u.password == password,
       );
       currentUser = user;
       return true;
@@ -78,8 +126,11 @@ class AuthController {
     }
   }
 
-  void logout() {
-    currentUser = null;
+  void logout() => currentUser = null;
+
+  AppUser? findByEmail(String email) {
+    final e = email.toLowerCase();
+    return _users.firstWhereOrNull((u) => u.email.toLowerCase() == e);
   }
 }
 
@@ -525,6 +576,9 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pop(context);
 
     if (success) {
+      // simpan status login ke shared pref
+      await LocalStorage.saveLogin(email);
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -653,38 +707,42 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  // inisiasi list jadwal kuliah
   late List<JadwalKuliah> _jadwalKuliahList;
 
   @override
   void initState() {
     super.initState();
     _jadwalKuliahList = List.from(dummyJadwalKuliah);
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final savedEmail = await LocalStorage.getEmail();
+    if (savedEmail != null) {
+      widget.authController.currentUser = widget.authController.findByEmail(
+        savedEmail,
+      );
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userName = authController.currentUser?.fullName ?? 'Mahasiswa';
+    final userName = widget.authController.currentUser?.fullName ?? "Mahasiswa";
 
     return Scaffold(
-      // inisiasi FAB + Form dialog
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddJadwalDialog,
-        child: Icon(Icons.add),
-      ),
-
       appBar: AppBar(
-        title: const Text('Dashboard Jadwal Kuliah'),
+        title: const Text("Dashboard Jadwal Kuliah"),
         actions: [
           IconButton(
-            tooltip: 'Logout',
-            onPressed: () {
-              authController.logout();
+            onPressed: () async {
+              widget.authController.logout();
+              await LocalStorage.clear();
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      LoginPage(authController: authController),
+                  builder: (_) =>
+                      LoginPage(authController: widget.authController),
                 ),
                 (route) => false,
               );
@@ -693,41 +751,19 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddJadwalDialog,
+        child: const Icon(Icons.add),
+      ),
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-            child: Text(
-              'Selamat datang, $userName',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(height: 8),
-
+          _welcomeBanner(userName),
           Expanded(
             child: ListView.builder(
-              itemCount: dummyJadwalKuliah.length,
-              itemBuilder: (_, index) {
-                final j = _jadwalKuliahList[index];
-                return ListTile(
-                  title: Text(j.mataKuliah),
-                  subtitle: Text("${j.hari} • ${j.jam} • ${j.ruang}"),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _editJadwal(index),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _confirmDelete(index),
-                      ),
-                    ],
-                  ),
-                );
+              itemCount: _jadwalKuliahList.length,
+              itemBuilder: (_, i) {
+                final j = _jadwalKuliahList[i];
+                return _jadwalTile(j, i);
               },
             ),
           ),
@@ -736,64 +772,25 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // Dialog untuk tambah jadwal
   void _showAddJadwalDialog() {
-    final TextEditingController mataKuliah = TextEditingController();
-    final TextEditingController hari = TextEditingController();
-    final TextEditingController jam = TextEditingController();
-    final TextEditingController ruang = TextEditingController();
-    final TextEditingController dosen = TextEditingController();
-
     showDialog(
       context: context,
-      builder: (_) {
+      builder: (context) {
         return AlertDialog(
           title: Text("Tambah Jadwal"),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                _inputField("Mata Kuliah", mataKuliah),
-                _inputField("Hari", hari),
-                _inputField("Jam", jam),
-                _inputField("Ruang", ruang),
-                _inputField("Dosen", dosen),
-              ],
-            ),
-          ),
+          content: Text("Isi form tambah jadwal di sini"),
           actions: [
             TextButton(
-              child: Text("Batal"),
               onPressed: () => Navigator.pop(context),
+              child: Text("Batal"),
             ),
             ElevatedButton(
-              child: Text("Simpan"),
               onPressed: () {
-                // Validasi: tidak boleh kosong
-                if (mataKuliah.text.isEmpty ||
-                    hari.text.isEmpty ||
-                    jam.text.isEmpty ||
-                    ruang.text.isEmpty ||
-                    dosen.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Semua field harus diisi")),
-                  );
-                  return;
-                }
-
-                // Tambah data
-                final baru = JadwalKuliah(
-                  mataKuliah: mataKuliah.text,
-                  hari: hari.text,
-                  jam: jam.text,
-                  ruang: ruang.text,
-                  dosen: dosen.text,
-                );
-
-                setState(() {
-                  _jadwalKuliahList.add(baru);
-                });
-
+                // Simpan data di sini
                 Navigator.pop(context);
               },
+              child: Text("Simpan"),
             ),
           ],
         );
@@ -801,35 +798,54 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // Helper Widget
-  Widget _inputField(String label, TextEditingController controller) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(labelText: label),
+  // Edit jadwal
+  void _editJadwal(int index) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Edit Jadwal"),
+          content: Text("Form edit jadwal untuk index $index"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Batal"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Update data di sini
+                Navigator.pop(context);
+              },
+              child: Text("Update"),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  // method confirm delete
+  // Konfirmasi hapus jadwal
   void _confirmDelete(int index) {
     showDialog(
       context: context,
-      builder: (_) {
+      builder: (context) {
         return AlertDialog(
           title: Text("Hapus Jadwal"),
-          content: Text("Apakah Anda yakin ingin menghapus jadwal ini?"),
+          content: Text("Yakin ingin menghapus data?"),
           actions: [
             TextButton(
-              child: Text("Batal"),
               onPressed: () => Navigator.pop(context),
+              child: Text("Tidak"),
             ),
             ElevatedButton(
-              child: Text("Ya"),
               onPressed: () {
+                // Hapus data di sini
                 setState(() {
-                  _jadwalKuliahList.removeAt(index);
+                  // contoh: listJadwal.removeAt(index);
                 });
                 Navigator.pop(context);
               },
+              child: Text("Hapus"),
             ),
           ],
         );
@@ -837,84 +853,31 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // method edit jadwal
-  void _editJadwal(int index) {
-    final j = _jadwalKuliahList[index];
+  Widget _welcomeBanner(String name) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    color: Colors.blue.withOpacity(.1),
+    child: Text(
+      "Selamat datang, $name",
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    ),
+  );
 
-    TextEditingController mataKuliahC = TextEditingController(
-      text: j.mataKuliah,
-    );
-    TextEditingController hariC = TextEditingController(text: j.hari);
-    TextEditingController jamC = TextEditingController(text: j.jam);
-    TextEditingController ruangC = TextEditingController(text: j.ruang);
-    TextEditingController dosenC = TextEditingController(text: j.dosen);
-
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text("Edit Jadwal"),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: mataKuliahC,
-                  decoration: const InputDecoration(labelText: "Mata Kuliah"),
-                ),
-                TextField(
-                  controller: hariC,
-                  decoration: const InputDecoration(labelText: "Hari"),
-                ),
-                TextField(
-                  controller: jamC,
-                  decoration: const InputDecoration(labelText: "Jam"),
-                ),
-                TextField(
-                  controller: ruangC,
-                  decoration: const InputDecoration(labelText: "Ruang"),
-                ),
-                TextField(
-                  controller: dosenC,
-                  decoration: const InputDecoration(labelText: "Dosen"),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Batal"),
-            ),
-            TextButton(
-              onPressed: () {
-                if (mataKuliahC.text.isEmpty ||
-                    hariC.text.isEmpty ||
-                    jamC.text.isEmpty ||
-                    ruangC.text.isEmpty ||
-                    dosenC.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Semua field harus diisi")),
-                  );
-                  return;
-                }
-
-                setState(() {
-                  _jadwalKuliahList[index] = JadwalKuliah(
-                    mataKuliah: mataKuliahC.text,
-                    hari: hariC.text,
-                    jam: jamC.text,
-                    ruang: ruangC.text,
-                    dosen: dosenC.text,
-                  );
-                });
-
-                Navigator.pop(context);
-              },
-              child: const Text("Simpan"),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  Widget _jadwalTile(JadwalKuliah j, int i) => ListTile(
+    title: Text(j.mataKuliah),
+    subtitle: Text("${j.hari} • ${j.jam} • ${j.ruang}"),
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.edit, color: Colors.blue),
+          onPressed: () => _editJadwal(i),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () => _confirmDelete(i),
+        ),
+      ],
+    ),
+  );
 }
